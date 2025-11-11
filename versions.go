@@ -28,7 +28,7 @@ var versionMap = map[uint32]string{
 }
 
 // List of keywords to ignore in the application path
-var ignoreKeywords = []string{"server", "debug", "prerelease"}
+var ignoreKeywords = []string{"server", "debug", "prerelease", "beta"}
 
 // reverseVersionMap translates the product name (e.g., "2024")
 // back to the major version number (e.g., 19).

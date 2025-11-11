@@ -1,140 +1,70 @@
 package main
 
 import (
-	"bytes"
-	"encoding/binary"
 	"fmt"
-	"io"
 	"log"
-	"os"
 	"os/exec"
 	"runtime"
   "path/filepath"
   "sort"
+  "flag"
 )
 
-//Based on the findings of Theunis de Jong in this Adobe forum post:
-//https://community.adobe.com/t5/indesign-discussions/ann-identify-your-indesign-file/td-p/3809701
-//
 
-// --- File Header Constants ---
-
-// magicNumber is the 16-byte sequence at the very start of an .indd file
-// that identifies it as a valid InDesign document.
-var magicNumber = []byte{
-	0x06, 0x06, 0xED, 0xF5, 0xD8, 0x1D, 0x46, 0xE5,
-	0xBD, 0x31, 0xEF, 0xE7, 0xFE, 0x74, 0xB7, 0x1D,
-}
-
-// headerSize is the minimum number of bytes we need to read from the file
-// to get all the information we need (Magic Number + Type + Flag + Padding + Versions).
-// 16 (Magic) + 8 (Type) + 1 (Flag) + 4 (Padding) + 4 (Major) + 4 (Minor) = 37 bytes
-const headerSize = 37
 
 
 // --- Main Application ---
 
 func main() {
-	// 1. Get the file path from command-line arguments
-	if len(os.Args) < 2 {
-		log.Fatal("Usage: indesign-launcher <path-to-file.indd>")
-	}
-	filePath, err := filepath.Abs(os.Args[1])
-	if err != nil {
-		log.Fatalf("Could not get absolute path for file: %v", err)
+
+  registerFlag := flag.Bool("register", false, "Register as default .indd handler")
+	unregisterFlag := flag.Bool("unregister", false, "Unregister as default .indd handler")
+
+	// Parse the flags
+	flag.Parse()
+
+	// --- Route based on flags ---
+	if *registerFlag {
+		if runtime.GOOS == "windows" {
+			if err := RegisterHandler(); err != nil {
+				log.Fatalf("Failed to register: %v", err)
+			}
+			fmt.Println("Successfully registered as default .indd handler.")
+		} else {
+			fmt.Println("--register is only supported on Windows.")
+		}
+		return // Exit after task is done
 	}
 
-	// 2. Call our new function to get the version
-	versionName, err := getInDesignVersion(filePath)
-	if err != nil {
-		log.Fatalf("Error reading file '%s': %v", filePath, err)
-	}
-  fmt.Printf("File: %s\n", filePath)
-	fmt.Printf("Detected File Version: %s (Major: %d)\n", versionMap[versionName], versionName)
-
-	// 3. DISCOVER: Find all installed versions
-	installedVersions, err := findAllInstalledVersions()
-	if err != nil {
-		log.Fatalf("Error finding installed versions: %v", err)
-	}
-	if len(installedVersions) == 0 {
-		log.Fatal("Failed: No InDesign versions found on this system.")
+	if *unregisterFlag {
+		if runtime.GOOS == "windows" {
+			if err := UnregisterHandler(); err != nil {
+				log.Fatalf("Failed to unregister: %v", err)
+			}
+			fmt.Println("Successfully unregistered.")
+		} else {
+			fmt.Println("--unregister is only supported on Windows.")
+		}
+		return // Exit after task is done
 	}
 
-	// 4. DECIDE: Select the best version to use
-	appPath, launchedVersion := selectVersionToLaunch(versionName, installedVersions)
-
-	if launchedVersion >= versionName {
-		fmt.Printf("... launching compatible version: %s (Major: %d)\n", versionMap[launchedVersion], launchedVersion)
-	} else {
-		fmt.Printf("... WARNING: No compatible version found.\n")
-		fmt.Printf("... Launching latest available version: %s (Major: %d)\n", versionMap[launchedVersion], launchedVersion)
+  // Check if a file path was provided
+	if flag.NArg() == 0 {
+		log.Println("Usage: indesign-launcher [options] <path-to-file.indd>")
+		log.Println("Options:")
+		flag.PrintDefaults()
+		return
 	}
-	fmt.Printf("Found application: %s\n", appPath)
 
-	// 5. LAUNCH
-	if err := launchApp(appPath, filePath); err != nil {
-		log.Fatalf("Failed to launch InDesign: %v", err)
+	// Get the file path from the remaining arguments
+	filePath := flag.Arg(0)
+	if err := openFile(filePath); err != nil {
+		log.Fatal(err)
 	}
-	fmt.Println("Successfully launched!")
+
 }
 
-// getInDesignVersion opens the file, reads the header, and returns the version string.
-func getInDesignVersion(filePath string) (uint32, error) {
 
-	// --- Step 1: Open the file for reading ---
-	file, err := os.Open(filePath)
-	if err != nil {
-		return 0, fmt.Errorf("could not open file: %w", err)
-	}
-	// 'defer' ensures this runs right before the function exits,
-	// guaranteeing the file is closed.
-	defer file.Close()
-
-	// --- Step 2: Read the 37-byte header ---
-
-	// Create a byte slice (a buffer) to hold the header data
-	header := make([]byte, headerSize)
-
-	// Read exactly 'headerSize' bytes from the file into our buffer
-	// We use io.ReadFull to ensure we get all 37 bytes, or an error.
-	if _, err := io.ReadFull(file, header); err != nil {
-		return 0, fmt.Errorf("could not read header: %w", err)
-	}
-
-	// --- Step 3: Check the Magic Number (Bytes 0-15) ---
-
-	// 'header[0:16]' creates a "slice" pointing to the first 16 bytes.
-	// We compare it to our 'magicNumber' constant.
-	if !bytes.Equal(header[0:16], magicNumber) {
-		return 0, fmt.Errorf("not a valid InDesign file (magic number mismatch)")
-	}
-
-	// --- Step 4: Determine Endianness (Byte 24) ---
-
-	// 'header[24]' accesses the 25th byte (index 24).
-	// We must know the endianness *before* we can read the version numbers.
-	var byteOrder binary.ByteOrder
-	// Based on the forum's JavaScript code:
-	// Flag 2 = Big Endian
-	// Flag 1 (or other) = Little Endian
-	switch header[24] {
-	case 2:
-		byteOrder = binary.BigEndian
-	default:
-		// Default to LittleEndian for flag 1 or any other value
-		byteOrder = binary.LittleEndian
-	}
-
-	// --- Step 5: Read the Major Version (Bytes 29-32) ---
-
-	// 'header[29:33]' creates a slice pointing to the 4 bytes for the major version.
-	// We use Go's binary package to convert these 4 bytes into a
-	// 32-bit unsigned integer (uint32), using the 'byteOrder' we just found.
-	majorVersion := byteOrder.Uint32(header[29:33])
-
-  return majorVersion, nil
-}
 
 // launchApp executes the command to open the file with the found application.
 // This logic is also OS-specific, so we handle it here.
@@ -182,4 +112,48 @@ func selectVersionToLaunch(fileMajor uint32, installed map[uint32]string) (strin
 	// Fallback to the latest installed version.
 	latestVersion := keys[len(keys)-1]
 	return installed[latestVersion], latestVersion
+}
+
+func openFile(filePath string) error {
+	// 1. Get and clean the file path
+	absPath, err := filepath.Abs(filePath)
+	if err != nil {
+		return fmt.Errorf("could not get absolute path for file: %w", err)
+	}
+
+	// 2. Get the file's required major version
+	fileMajorVersion, err := getInDesignVersion(absPath)
+	if err != nil {
+		return fmt.Errorf("error reading file '%s': %w", absPath, err)
+	}
+	fmt.Printf("File: %s\n", absPath)
+	fmt.Printf("Detected File Version: %s (Major: %d)\n", versionMap[fileMajorVersion], fileMajorVersion)
+
+	// 3. DISCOVER: Find all installed versions
+	installedVersions, err := findAllInstalledVersions()
+	if err != nil {
+		return fmt.Errorf("error finding installed versions: %w", err)
+	}
+	if len(installedVersions) == 0 {
+		return fmt.Errorf("failed: No InDesign versions found on this system")
+	}
+
+	// 4. DECIDE: Select the best version to use
+	appPath, launchedVersion := selectVersionToLaunch(fileMajorVersion, installedVersions)
+
+	if launchedVersion >= fileMajorVersion {
+		fmt.Printf("... launching compatible version: %s (Major: %d)\n", versionMap[launchedVersion], launchedVersion)
+	} else {
+		fmt.Printf("... WARNING: No compatible version found.\n")
+		fmt.Printf("... Launching latest available version: %s (Major: %d)\n", versionMap[launchedVersion], launchedVersion)
+	}
+	fmt.Printf("Found application: %s\n", appPath)
+
+	// 5. LAUNCH
+	if err := launchApp(appPath, absPath); err != nil {
+		return fmt.Errorf("failed to launch InDesign: %w", err)
+	}
+	
+	fmt.Println("Successfully launched!")
+	return nil
 }
