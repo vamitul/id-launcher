@@ -1,23 +1,20 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"os/exec"
+	"path/filepath"
 	"runtime"
-  "path/filepath"
-  "sort"
-  "flag"
+	"sort"
 )
-
-
-
 
 // --- Main Application ---
 
 func main() {
 
-  registerFlag := flag.Bool("register", false, "Register as default .indd handler")
+	registerFlag := flag.Bool("register", false, "Register as default .indd handler")
 	unregisterFlag := flag.Bool("unregister", false, "Unregister as default .indd handler")
 
 	// Parse the flags
@@ -25,30 +22,26 @@ func main() {
 
 	// --- Route based on flags ---
 	if *registerFlag {
-		if runtime.GOOS == "windows" {
-			if err := RegisterHandler(); err != nil {
-				log.Fatalf("Failed to register: %v", err)
-			}
-			fmt.Println("Successfully registered as default .indd handler.")
-		} else {
-			fmt.Println("--register is only supported on Windows.")
+
+		if err := RegisterHandler(); err != nil {
+			log.Fatalf("Failed to register: %v", err)
 		}
+		fmt.Println("Successfully registered as default .indd handler.")
+
 		return // Exit after task is done
 	}
 
 	if *unregisterFlag {
-		if runtime.GOOS == "windows" {
-			if err := UnregisterHandler(); err != nil {
-				log.Fatalf("Failed to unregister: %v", err)
-			}
-			fmt.Println("Successfully unregistered.")
-		} else {
-			fmt.Println("--unregister is only supported on Windows.")
+
+		if err := UnregisterHandler(); err != nil {
+			log.Fatalf("Failed to unregister: %v", err)
 		}
+		fmt.Println("Successfully unregistered.")
+
 		return // Exit after task is done
 	}
 
-  // Check if a file path was provided
+	// Check if a file path was provided
 	if flag.NArg() == 0 {
 		log.Println("Usage: indesign-launcher [options] <path-to-file.indd>")
 		log.Println("Options:")
@@ -63,8 +56,6 @@ func main() {
 	}
 
 }
-
-
 
 // launchApp executes the command to open the file with the found application.
 // This logic is also OS-specific, so we handle it here.
@@ -91,14 +82,14 @@ func launchApp(appPath, filePath string) error {
 
 // It returns the app path and the major version it selected.
 func selectVersionToLaunch(fileMajor uint32, installed map[uint32]string) (string, uint32) {
-	
+
 	// Create a sorted list of all installed major versions
 	var keys []uint32
 	for k := range installed {
 		keys = append(keys, k)
 	}
 	sort.Slice(keys, func(i, j int) bool { return keys[i] < keys[j] })
-	
+
 	// Case 1: Find the lowest compatible version
 	// Loop from low to high
 	for _, major := range keys {
@@ -107,7 +98,7 @@ func selectVersionToLaunch(fileMajor uint32, installed map[uint32]string) (strin
 			return installed[major], major
 		}
 	}
-	
+
 	// Case 2: No compatible version found.
 	// Fallback to the latest installed version.
 	latestVersion := keys[len(keys)-1]
@@ -153,7 +144,7 @@ func openFile(filePath string) error {
 	if err := launchApp(appPath, absPath); err != nil {
 		return fmt.Errorf("failed to launch InDesign: %w", err)
 	}
-	
+
 	fmt.Println("Successfully launched!")
 	return nil
 }
