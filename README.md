@@ -251,9 +251,9 @@ GOOS=windows GOARCH=amd64 go build -o indesign-launcher.exe
 
 # Build for macOS (from Windows/Linux)
 # Apple Silicon:
-GOOS=darwin GOARCH=arm64 go build -o indesign-launcher
+env GOOS=darwin GOARCH=arm64 go build -o indesign-launcher
 # Intel:
-GOOS=darwin GOARCH=amd64 go build -o indesign-launcher
+envGOOS=darwin GOARCH=amd64 go build -o indesign-launcher
 ```
 
 **⭐ Important Windows Build Note:**
