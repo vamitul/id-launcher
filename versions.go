@@ -2,6 +2,7 @@ package main
 
 // versionMap translates the raw major version integer
 // into the common Adobe product name.
+// TODO: Should ignore really ancient versions.
 var versionMap = map[uint32]string{
 	3:  "CS",
 	4:  "CS2",
