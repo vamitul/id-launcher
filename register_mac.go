@@ -17,7 +17,7 @@ func RegisterHandler() error {
 
 	// 2. Define the AppleScript content
 	scriptContent := fmt.Sprintf(
-`on open dropped_files
+		`on open dropped_files
     -- This script will run your Go program
     -- for each file dropped on it.
     repeat with f in dropped_files

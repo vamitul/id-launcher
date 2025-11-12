@@ -18,15 +18,14 @@ const (
 	// The key for the "Open With" list
 	openWithKeyPath = `Software\Microsoft\Windows\CurrentVersion\Explorer\FileExts\.indd\OpenWithProgids`
 )
+
 var progIDKeyPath = fmt.Sprintf(`Software\Classes\%s`, progID)
 
 // --- Windows API Constants for SHChangeNotify ---
 const (
 	SHCNE_ASSOCCHANGED = 0x08000000
-	SHCNF_IDLIST     = 0x0000
+	SHCNF_IDLIST       = 0x0000
 )
-
-
 
 var (
 	// Get a lazy-loaded handle to shell32.dll
