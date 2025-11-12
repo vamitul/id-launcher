@@ -1,0 +1,50 @@
+name: Build and Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Tag name for the release (e.g., v1.0.0)'
+        required: true
+        type: string
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: 'stable'
+
+      - name: Create dist directory
+        run: mkdir -p dist
+
+      - name: Build Windows (amd64)
+        run: env GOOS=windows GOARCH=amd64 go build -ldflags="-H=windowsgui" -o dist/indesign-launcher-win.exe
+
+      - name: Build macOS Intel (amd64)
+        run: env GOOS=darwin GOARCH=amd64 go build -o dist/indesign-launcher-amd64
+
+      - name: Build macOS Apple Silicon (arm64)
+        run: env GOOS=darwin GOARCH=arm64 go build -o dist/indesign-launcher-arm64
+
+      - name: Create tag
+        run: |
+          git tag ${{ inputs.tag_name }}
+          git push origin ${{ inputs.tag_name }}
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ inputs.tag_name }}
+          files: |
+            dist/indesign-launcher-win.exe
+            dist/indesign-launcher-amd64
+            dist/indesign-launcher-arm64
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
