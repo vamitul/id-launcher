@@ -46,16 +46,8 @@ func findAllInstalledVersions() (map[uint32]string, error) {
 			continue // Path not found
 		}
 
-		var appPath string
-		parts := strings.Split(command, "\"")
-		if len(parts) >= 2 {
-			appPath = parts[1] // e.g., "C:\..."
-		} else {
-			continue // Invalid path
-		}
-
 		// filter out unwanted versions based on keywords
-		lowerPath := strings.ToLower(appPath)
+		lowerPath := strings.ToLower(command)
 		shouldIgnore := false
 		for _, keyword := range ignoreKeywords {
 			if strings.Contains(lowerPath, keyword) {
@@ -68,7 +60,7 @@ func findAllInstalledVersions() (map[uint32]string, error) {
 			continue // Skip this version
 		}
 
-		found[major] = appPath // Add to our map, e.g., found[19] = "C:\..."
+		found[major] = command // Add to our map, e.g., found[19] = "C:\..."
 	}
 
 	return found, nil
