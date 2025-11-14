@@ -96,7 +96,7 @@ func main() {
 
 	// 5. Compile and save the .syso file
 	// This will create 'rsrc.syso' in the current directory
-	out, err := os.Create("rsrc.syso")
+	out, err := os.Create("rsrc_windows_amd64.syso")
 	if err != nil {
 		log.Fatalf("Could not create rsrc.syso: %v", err)
 	}
