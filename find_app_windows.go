@@ -20,7 +20,7 @@ func findAllInstalledVersions() (map[uint32]string, error) {
 	for major, name := range versionMap {
 		// Use the name to find the ProgID
 		// (e.g., "InDesign.Application.19")
-		progIDKeyPath := fmt.Sprintf(`InDesign.Application.%s\CLSID`, name)
+		progIDKeyPath := fmt.Sprintf(`InDesign.Application.%s\CLSID`, strings.ReplaceAll(name, " ", "."))
 
 		progIDKey, err := registry.OpenKey(registry.CLASSES_ROOT, progIDKeyPath, registry.QUERY_VALUE)
 		if err != nil {
