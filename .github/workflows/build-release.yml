@@ -89,11 +89,14 @@ jobs:
             git log "$PREV_TAG"..HEAD --pretty=format:"* %s (%h)" > CHANGELOG.md
           fi
 
-          # Write the changelog as a multiline step output (safer than putting it into $GITHUB_ENV)
-          # Use the GITHUB_OUTPUT file as documented to set a multiline output named "changelog".
-          echo "changelog<<EOF" >> $GITHUB_OUTPUT
-          cat CHANGELOG.md >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          # Ensure CHANGELOG.md ends with a newline (prevents EOF/delimiter issues)
+          sed -e '$a\' CHANGELOG.md > CHANGELOG.tmp && mv CHANGELOG.tmp CHANGELOG.md
+
+          # Use a unique delimiter to avoid collisions with content
+          DELIM="CHANGELOG_$(date +%s%N)"
+          echo "changelog<<${DELIM}" >> "$GITHUB_OUTPUT"
+          cat CHANGELOG.md >> "$GITHUB_OUTPUT"
+          echo "${DELIM}" >> "$GITHUB_OUTPUT"
 
       # ---------------------
       # TAG + RELEASE
