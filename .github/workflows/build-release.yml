@@ -90,9 +90,9 @@ jobs:
           fi
 
           {
-            echo "CHANGELOG<<EOF"
-            cat CHANGELOG.md
-            echo "EOF"
+          echo "CHANGELOG<<EOF"
+          cat CHANGELOG.md
+          echo "EOF"
           } >> "$GITHUB_ENV"
 
       # ---------------------
