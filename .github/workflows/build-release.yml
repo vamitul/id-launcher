@@ -89,9 +89,11 @@ jobs:
             git log "$PREV_TAG"..HEAD --pretty=format:"* %s (%h)" > CHANGELOG.md
           fi
 
-          echo "CHANGELOG<<EOF" >> $GITHUB_ENV
-          cat CHANGELOG.md >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
+          {
+            echo "CHANGELOG<<EOF"
+            cat CHANGELOG.md
+            echo "EOF"
+          } >> "$GITHUB_ENV"
 
       # ---------------------
       # TAG + RELEASE
