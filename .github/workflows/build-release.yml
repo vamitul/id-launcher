@@ -35,7 +35,6 @@ jobs:
           TAG_NAME="v${VERSION}"
           echo "VERSION=$VERSION" >> $GITHUB_ENV
           echo "TAG_NAME=$TAG_NAME" >> $GITHUB_ENV
-          echo "::set-output name=tag::$TAG_NAME"
 
       - name: Ensure tag doesn't already exist
         run: |
@@ -45,6 +44,15 @@ jobs:
           fi
         env:
           TAG_NAME: ${{ env.TAG_NAME }}
+
+      - name: Find previous tag
+        id: prevtag
+        run: |
+          PREV=$(git tag --sort=creatordate | tail -n 2 | head -n 1)
+
+          echo "PREV_TAG=$PREV" >> $GITHUB_ENV
+
+          echo "Previous tag: $PREV"
 
       # ---------------------
       # BUILD BINARIES
@@ -71,18 +79,11 @@ jobs:
       # ---------------------
       # CHANGELOG GENERATION
       # ---------------------
-      - name: Get previous tag
-        id: prevtag
-        run: |
-          PREV=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
-          echo "PREV_TAG=$PREV" >> $GITHUB_ENV
-          echo "::set-output name=prev::$PREV"
-
       - name: Generate changelog
         id: changelog
         run: |
           if [ -z "$PREV_TAG" ]; then
-            echo "No previous tag found, using full commit history."
+            echo "No previous tag found → using full history"
             git log --pretty=format:"* %s (%h)" > CHANGELOG.md
           else
             git log "$PREV_TAG"..HEAD --pretty=format:"* %s (%h)" > CHANGELOG.md
