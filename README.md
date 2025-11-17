@@ -1,26 +1,30 @@
 # InDesign Launcher
 
-A smart, cross-platform utility to automatically open `.indd` files with the correct version of Adobe InDesign.
+A cross-platform utility to automatically open `.indd` files with the correct version of Adobe InDesign.
 
 - - -
 
-## 🎯 The Problem
+## The Problem
 
 When you have multiple versions of Adobe InDesign installed (e.g., 2023, 2024, and 2025), Windows and macOS will only set **one** of them as the default application for `.indd` files.
 
 This means if InDesign 2025 is your default, double-clicking a file saved in 2023 will try to open it in 2025. This forces an unnecessary conversion, may update file formats, and can cause compatibility warnings.
 
-This tool fixes that. It's a tiny, lightning-fast "dispatcher" that you set as the default app. When you open a file, it:
+## The Solution
 
-1. Instantly reads the file's header to see what version it _needs_.
+**InDesign Launcher** acts as a lightweight dispatcher. When you open a file, it performs three steps:
 
-2. Scans your system to see what versions you _have_.
+1. **Reads** the file header to detect the specific version required.
 
-3. Launches the **correct** version of InDesign.
+2. **Scans** the system to identify installed InDesign versions.
+
+3. **Launches** the correct version immediately.
+
+It handles the complexity invisibly, ensuring you always work in the correct environment.
 
 - - -
 
-## ✨ Features
+## Features
 
 * **Cross-Platform:** Works on both Windows and macOS.
 
@@ -46,11 +50,10 @@ This tool fixes that. It's a tiny, lightning-fast "dispatcher" that you set as t
 
   * On **macOS**, it guides you through a simple, one-time manual setup.
 
-* **No Admin Rights:** All operations, including registration, are done at the user level.
 
 - - -
 
-## ⚙️ Installation
+## Installation
 
 You can get the tool in two ways:
 
@@ -93,97 +96,172 @@ go build
 
 - - -
 
-## 🚀 Usage (One-Time Setup)
+## Documentation manager
 
-To use the launcher, you must register it with your operating system.
+Custom Gem
 
-### On Windows
+Show thinking
 
-The launcher adds itself to the "Open With..." menu. You just need to run this command once.
+Here is the revised `README.md`. It has been rewritten to align with the **Krommatine Systems** "Wise Guide" voice—direct, authoritative, and helpful—while accurately reflecting the new macOS `.app` bundle generation logic found in your source code.
 
-1. Open a Command Prompt (cmd) or PowerShell.
+- - -
 
-2. Navigate to the directory where you saved the tool (e.g., `cd C:\Tools`).
+# InDesign Launcher
 
-3. Run the registration command:
+A precision utility to automatically open Adobe InDesign (`.indd`) files with the correct version of the application.
 
-   Shell
+- - -
+
+## The Problem
+
+Installing multiple versions of Adobe InDesign (e.g., 2023, 2024, and 2025) creates a conflict. Operating systems allow only one default application for a file type.
+
+If InDesign 2025 is your default, opening a file saved in 2023 forces an unnecessary conversion. This alters the file format and triggers compatibility warnings.
+
+## The Solution
+
+**InDesign Launcher** acts as a lightweight dispatcher. When you open a file, it performs three steps:
+
+1. **Reads** the file header to detect the specific version required.
+
+2. **Scans** the system to identify installed InDesign versions.
+
+3. **Launches** the correct version immediately.
+
+It handles the complexity invisibly, ensuring you always work in the correct environment.
+
+- - -
+
+## capabilities
+
+* **Cross-Platform:** Native support for both Windows and macOS.
+
+* **Binary Detection:** Parses the `.indd` binary header to detect the exact creation version (CS6 through CC 2025+).
+
+* **Smart Fallback:** If the exact version is missing, it launches the oldest compatible version to minimize file conversion issues.
+
+* **Clean Integration:**
+
+  * **Windows:** Registers as a valid "Open With" handler.
+
+  * **macOS:** Generates a native `.app` bundle for standard Finder integration.
+
+* **User-Level Operation:** Requires no administrative privileges.
+
+- - -
+
+## Installation
+
+### Option 1: Pre-Built Binary
+
+1. Navigate to the **Releases** page.
+
+2. Download the executable for your system:
+
+   * **Windows:** `indesign-launcher.exe`
+
+   * **macOS:** `indesign-launcher`
+
+3. Move the file to a permanent location (e.g., `C:\Tools\` on Windows or `/usr/local/bin/` on macOS).
+
+### Option 2: Build from Source
+
+Ensure the [Go toolchain (v1.20+)](https://go.dev/doc/install) is installed.
+
+Bash
+
+```
+# Clone and build
+git clone https://github.com/krommatine/indesign-launcher.git
+cd indesign-launcher
+go build
+```
+
+- - -
+
+## Setup
+
+The launcher must be registered with the operating system to function as a default handler.
+
+### Windows Configuration
+
+1. Open Command Prompt or PowerShell.
+
+2. Navigate to the tool's directory.
+
+3. Run the registration flag:
+
+   PowerShell
 
    ```
    .\indesign-launcher.exe --register
    ```
 
-4. The tool will confirm it has been added and give you the next steps.
+4. **Set as Default:**
 
-**To set it as the default:**
+   * Right-click any `.indd` file.
 
-1. Right-click any `.indd` file.
+   * Select **Open with > Choose another app**.
 
-2. Select **Open with > Choose another app**.
+   * Select **InDesign Launcher**.
 
-3. Select **InDesign Launcher** from the list.
+   * Check **"Always use this app to open .indd files"**.
 
-4. **Important:** Check the box **"Always use this app to open .indd files"**.
+### macOS Configuration
 
-To undo this, you can run `.\indesign-launcher.exe --unregister`.
+Previous versions required AppleScript. The tool now generates a native application bundle.
 
-- - -
+1. Open Terminal and navigate to the directory containing the `indesign-launcher` binary.
 
-### On macOS
+2. Run the registration command:
 
-macOS will not allow a command-line tool to be set as a file handler. Our tool will guide you to create a simple "wrapper" app using AppleScript.
-
-1. Open a Terminal.
-
-2. Navigate to the directory where you saved the `indesign-launcher` binary.
-
-3. Run the registration command:
-
-   Shell
+   Bash
 
    ```
+   chmod +x indesign-launcher
    ./indesign-launcher --register
    ```
 
-4. This will create a new file named **`indesign_launcher.applescript`** in the same directory.
+3. The tool will create a valid **`indesign-launcher.app`** in your current directory (or Desktop).
 
-5. Follow the instructions printed in your terminal (copied here for reference):
+4. **Install the App:**
 
-   1. Open 'Script Editor' (it's in your Utilities folder).
+   * Move `indesign-launcher.app` to your `/Applications` folder.
 
-   2. Drag the 'indesign\_launcher.applescript' file into it.
+5. **Set as Default:**
 
-   3. Go to 'File' > 'Export...'.
+   * Right-click any `.indd` file in Finder.
 
-   4. Set 'File Format' to 'Application'.
+   * Select **Get Info**.
 
-   5. Save it as 'InDesignLauncher.app' in your Applications folder.
+   * Under **"Open with:"**, select **InDesign Launcher**.
 
-**To set it as the default:**
+   * Click **Change All...**.
 
-1. Right-click any `.indd` file and select **Get Info**.
+**Note on Gatekeeper:** Because this tool is open-source and not notarized by Apple, you may need to bypass security checks on the first run.
 
-2. Find the **"Open with:"** section.
+* **Option A:** Right-click the app and select **Open**, then confirm in the dialog.
 
-3. Click the dropdown menu and select your new **InDesignLauncher.app**.
+* **Option B:** Remove the quarantine attribute via Terminal:
 
-4. Click the **"Change All..."** button to make this the default for all `.indd` files.
+  Bash
 
-To undo this, simply repeat the "Get Info" steps and set a normal Adobe InDesign version as the default.
+  ```
+  xattr -d com.apple.quarantine /Applications/indesign-launcher.app
+  ```
 
 - - -
 
-## ☀️ Everyday Use
+## Everyday Use
 
 After you've completed the one-time setup, you're done!
 
 Just **double-click any `.indd` file** on your system. The launcher will run invisibly, find the correct InDesign, and open your file in a fraction of a second.
 
-- - -
 
 - - -
 
-## 🧑‍💻 For Developers & Contributors
+## For Developers & Contributors
 
 This project is open-source and contributions are highly welcome! Here are some details to help you get started.
 
@@ -223,15 +301,15 @@ The project is structured using Go's **build constraints** to keep the logic for
 
 * `parse_file.go`: Contains `getInDesignVersion()`, the cross-platform logic for reading and parsing the `.indd` file header.
 
-* `find_app_windows.go`: (`//go:build windows`) Windows-only code. `findAllInstalledVersions()` scans `HKEY_CLASSES_ROOT` for Adobe's `InDesign.Application.XX\CLSID` keys to find `LocalServer32` paths.
+* `find_app_windows.go`: (`//go:build windows`) Windows-only code. `findAllInstalledVersions()` First searches the default paths for InDesign installations on disk. If a version is not found, it then tries to scan `HKEY_CLASSES_ROOT` for Adobe's `InDesign.Application.XX\CLSID` keys to find `LocalServer32` paths. For old version of InDesign this might fail as the registry paths and setup has changed over time.
 
 * `find_app_darwin.go`: (`//go:build darwin`) macOS-only code. `findAllInstalledVersions()` scans the `/Applications` folder for `Adobe InDesign *` bundles.
 
 * `register_win.go`: (`//go:build windows`) Windows-only code for the `--register` and `--unregister` commands. Modifies the `HKEY_CURRENT_USER` registry, adding a new ProgID and an entry in `OpenWithProgids`.
 
-* `register_mac.go`: (`//go:build darwin`) macOS-only code for the registration flags. Prints guidance and creates the helper `applescript` file.
+* `register_mac.go`: (`//go:build darwin`) macOS-only code for the registration flags.
 
-* _(Not present, but implied by the others)_ `find_app_unsupported.go` & `registry_stub.go`: These files would provide empty stubs for other OSs (like Linux) to allow the code to compile.
+
 
 ### Building from Source
 
@@ -247,7 +325,7 @@ go build
 
 # Build for Windows (from Mac/Linux)
 # 64-bit:
-GOOS=windows GOARCH=amd64 go build -o indesign-launcher.exe
+GOOS=windows GOARCH=amd64 go build -ldflags="-H=windowsgui" -o indesign-launcher.exe
 
 # Build for macOS (from Windows/Linux)
 # Apple Silicon:
@@ -256,34 +334,17 @@ env GOOS=darwin GOARCH=arm64 go build -o indesign-launcher
 envGOOS=darwin GOARCH=amd64 go build -o indesign-launcher
 ```
 
-**⭐ Important Windows Build Note:**
 
-When you run the final `indesign-launcher.exe` on Windows (by double-clicking a file), a console window will flash open. To create a "headless" production build that hides this window, build with the following `-ldflags`:
 
-Bash
-
-```
-# Build for Windows production (hides console)
-go build -ldflags="-H=windowsgui" -o indesign-launcher.exe
-```
-
-### 🚀 Future Goals & To-Do
+### Future Goals & To-Do
 
 
 
 * **Handle more File Types:** `.indb` and `.indt` files are also Adobe InDesign formats. The launcher could be extended to support these as well.
 
-* **Add an Application Icon:**
-
-  * **Windows:** The `-ldflags="-H=windowsgui"` build would benefit from embedding an icon resource (`.syso` file).
-
-  * **macOS:** The AppleScript wrapper should be part of a build script that also assigns a custom icon.
-
-* **Automate macOS Bundling:** The current "guide the user" step for macOS is a good start, but a proper build script (`create_bundle.sh`?) could automate the creation of the `InDesignLauncher.app` bundle, including the `Info.plist` and AppleScript stub.
-
 - - -
 
-## 📜 License
+## License
 
 This project is open-source and available under the MIT License.
 
