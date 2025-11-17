@@ -16,10 +16,10 @@ import (
 
 // --- Main Application ---
 
-//go:embed resources\PNG\alert-1024.png
+//go:embed resources/PNG/alert-1024.png
 var iconErr []byte
 
-//go:embed resources\PNG\info-1024.png
+//go:embed resources/PNG/info-1024.png
 var iconInfo []byte
 
 func main() {
