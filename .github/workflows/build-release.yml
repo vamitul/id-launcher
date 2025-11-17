@@ -89,11 +89,11 @@ jobs:
             git log "$PREV_TAG"..HEAD --pretty=format:"* %s (%h)" > CHANGELOG.md
           fi
 
-          {
-          echo "CHANGELOG<<EOF"
-          cat CHANGELOG.md
-          echo "EOF"
-          } >> "$GITHUB_ENV"
+          # Write the changelog as a multiline step output (safer than putting it into $GITHUB_ENV)
+          # Use the GITHUB_OUTPUT file as documented to set a multiline output named "changelog".
+          echo "changelog<<EOF" >> $GITHUB_OUTPUT
+          cat CHANGELOG.md >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
       # ---------------------
       # TAG + RELEASE
@@ -112,7 +112,7 @@ jobs:
           name: Release ${{ env.TAG_NAME }}
           body: |
             ## Changes in this release
-            ${{ env.CHANGELOG }}
+            ${{ steps.changelog.outputs.changelog }}
           files: |
             dist/indesign-launcher-win.exe
             dist/indesign-launcher-amd64
