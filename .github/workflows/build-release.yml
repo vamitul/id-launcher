@@ -2,55 +2,117 @@ name: Build and Release
 
 on:
   workflow_dispatch:
-    # No inputs, we read from the file
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
+      # ---------------------
+      # SETUP
+      # ---------------------
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0    # Required for changelog + previous tag detection
 
       - name: Set up Go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
-          go-version: 'stable'
+          go-version: stable
 
-      - name: Install dependencies (winres and jq)
+      - name: Install dependencies (jq + winres)
         run: |
-          go get github.com/tc-hib/winres
           sudo apt-get update && sudo apt-get install -y jq
-      
-      - name: Read version from JSON
+          go install github.com/tc-hib/winres@latest
+
+      # ---------------------
+      # VERSION EXTRACTION
+      # ---------------------
+      - name: Read version from versioninfo.json
+        id: version
         run: |
-          # Reads "1.0.0" and turns it into "v1.0.0"
-          echo "TAG_NAME=v$(jq -r .Version versioninfo.json)" >> $GITHUB_ENV
-          
+          VERSION=$(jq -r .Version versioninfo.json)
+          TAG_NAME="v${VERSION}"
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "TAG_NAME=$TAG_NAME" >> $GITHUB_ENV
+          echo "::set-output name=tag::$TAG_NAME"
+
+      - name: Ensure tag doesn't already exist
+        run: |
+          if git rev-parse "$TAG_NAME" >/dev/null 2>&1; then
+            echo "❌ Tag $TAG_NAME already exists. Aborting."
+            exit 1
+          fi
+        env:
+          TAG_NAME: ${{ env.TAG_NAME }}
+
+      # ---------------------
+      # BUILD BINARIES
+      # ---------------------
       - name: Create dist directory
         run: mkdir -p dist
 
       - name: Build Windows (amd64)
-        run: env GOOS=windows GOARCH=amd64 go build -ldflags="-H=windowsgui" -o dist/indesign-launcher-win.exe
+        run: |
+          env GOOS=windows GOARCH=amd64 go build \
+            -ldflags="-H=windowsgui" \
+            -o dist/indesign-launcher-win.exe
 
       - name: Build macOS Intel (amd64)
-        run: env GOOS=darwin GOARCH=amd64 go build -o dist/indesign-launcher-amd64
+        run: |
+          env GOOS=darwin GOARCH=amd64 go build \
+            -o dist/indesign-launcher-amd64
 
       - name: Build macOS Apple Silicon (arm64)
-        run: env GOOS=darwin GOARCH=arm64 go build -o dist/indesign-launcher-arm64
-
-      - name: Create tag
         run: |
-          git tag ${{ inputs.tag_name }}
-          git push origin ${{ inputs.tag_name }}
+          env GOOS=darwin GOARCH=arm64 go build \
+            -o dist/indesign-launcher-arm64
 
-      - name: Create Release
+      # ---------------------
+      # CHANGELOG GENERATION
+      # ---------------------
+      - name: Get previous tag
+        id: prevtag
+        run: |
+          PREV=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          echo "PREV_TAG=$PREV" >> $GITHUB_ENV
+          echo "::set-output name=prev::$PREV"
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          if [ -z "$PREV_TAG" ]; then
+            echo "No previous tag found, using full commit history."
+            git log --pretty=format:"* %s (%h)" > CHANGELOG.md
+          else
+            git log "$PREV_TAG"..HEAD --pretty=format:"* %s (%h)" > CHANGELOG.md
+          fi
+
+          echo "CHANGELOG<<EOF" >> $GITHUB_ENV
+          cat CHANGELOG.md >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
+      # ---------------------
+      # TAG + RELEASE
+      # ---------------------
+      - name: Create git tag and push
+        run: |
+          git tag "$TAG_NAME"
+          git push origin "$TAG_NAME"
+        env:
+          TAG_NAME: ${{ env.TAG_NAME }}
+
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ inputs.tag_name }}
+          tag_name: ${{ env.TAG_NAME }}
+          name: Release ${{ env.TAG_NAME }}
+          body: |
+            ## Changes in this release
+            ${{ env.CHANGELOG }}
           files: |
             dist/indesign-launcher-win.exe
             dist/indesign-launcher-amd64
             dist/indesign-launcher-arm64
-          draft: false
-          prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
