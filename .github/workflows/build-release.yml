@@ -23,7 +23,7 @@ jobs:
       - name: Install dependencies (jq + winres)
         run: |
           sudo apt-get update && sudo apt-get install -y jq
-          go install github.com/tc-hib/winres@latest
+          go mod tidy
 
       # ---------------------
       # VERSION EXTRACTION
