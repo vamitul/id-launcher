@@ -2,6 +2,7 @@ package main
 
 //go:generate go run make_rsrc.go
 import (
+	_ "embed"
 	"flag"
 	"fmt"
 	"log"
@@ -9,14 +10,23 @@ import (
 	"path/filepath"
 	"runtime"
 	"sort"
+
+	"github.com/gen2brain/beeep"
 )
 
 // --- Main Application ---
+
+//go:embed resources\PNG\alert-1024.png
+var iconErr []byte
+
+//go:embed resources\PNG\info-1024.png
+var iconInfo []byte
 
 func main() {
 
 	registerFlag := flag.Bool("register", false, "Register as default .indd handler")
 	unregisterFlag := flag.Bool("unregister", false, "Unregister as default .indd handler")
+	beeep.AppName = "InDesign Launcher"
 
 	// Parse the flags
 	flag.Parse()
@@ -110,12 +120,14 @@ func openFile(filePath string) error {
 	// 1. Get and clean the file path
 	absPath, err := filepath.Abs(filePath)
 	if err != nil {
+		beeep.Alert("File not found", fmt.Sprintf("Could not find file %v", err), iconErr)
 		return fmt.Errorf("could not get absolute path for file: %w", err)
 	}
 
 	// 2. Get the file's required major version
 	fileMajorVersion, err := getInDesignVersion(absPath)
 	if err != nil {
+		beeep.Alert("Invalid file", fmt.Sprintf("Error reading file '%s': %v", absPath, err), iconErr)
 		return fmt.Errorf("error reading file '%s': %w", absPath, err)
 	}
 	fmt.Printf("File: %s\n", absPath)
@@ -124,9 +136,11 @@ func openFile(filePath string) error {
 	// 3. DISCOVER: Find all installed versions
 	installedVersions, err := findAllInstalledVersions()
 	if err != nil {
+		beeep.Alert("InDesign error", fmt.Sprintf("Error detecting InDesign versions: %v", err), iconErr)
 		return fmt.Errorf("error finding installed versions: %w", err)
 	}
 	if len(installedVersions) == 0 {
+		beeep.Alert("InDesign not found", "Failed: No InDesign versions found on this system", iconErr)
 		return fmt.Errorf("failed: No InDesign versions found on this system")
 	}
 
@@ -143,9 +157,10 @@ func openFile(filePath string) error {
 
 	// 5. LAUNCH
 	if err := launchApp(appPath, absPath); err != nil {
+		beeep.Alert("Failed", fmt.Sprintf("failed to launch InDesign: %v", err), iconErr)
 		return fmt.Errorf("failed to launch InDesign: %w", err)
 	}
-
+	beeep.Notify("Open", fmt.Sprintf("%s opened in InDesign %s", filepath.Base(absPath), versionMap[launchedVersion]), iconInfo)
 	fmt.Println("Successfully launched!")
 	return nil
 }
