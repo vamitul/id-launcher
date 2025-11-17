@@ -80,5 +80,5 @@ func getInDesignVersion(filePath string) (uint32, error) {
 	// 32-bit unsigned integer (uint32), using the 'byteOrder' we just found.
 	majorVersion := byteOrder.Uint32(header[29:33])
 
-  return majorVersion, nil
+	return majorVersion, nil
 }

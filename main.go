@@ -1,5 +1,6 @@
 package main
 
+//go:generate go run make_rsrc.go
 import (
 	"flag"
 	"fmt"

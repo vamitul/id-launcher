@@ -2,11 +2,7 @@ name: Build and Release
 
 on:
   workflow_dispatch:
-    inputs:
-      tag_name:
-        description: 'Tag name for the release (e.g., v1.0.0)'
-        required: true
-        type: string
+    # No inputs, we read from the file
 
 jobs:
   build:
@@ -19,6 +15,16 @@ jobs:
         with:
           go-version: 'stable'
 
+      - name: Install dependencies (winres and jq)
+        run: |
+          go get github.com/tc-hib/winres
+          sudo apt-get update && sudo apt-get install -y jq
+      
+      - name: Read version from JSON
+        run: |
+          # Reads "1.0.0" and turns it into "v1.0.0"
+          echo "TAG_NAME=v$(jq -r .Version versioninfo.json)" >> $GITHUB_ENV
+          
       - name: Create dist directory
         run: mkdir -p dist
 

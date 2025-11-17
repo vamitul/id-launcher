@@ -12,7 +12,7 @@ import (
 // It scans /Applications for "Adobe InDesign XXXX" folders.
 func findAllInstalledVersions() (map[uint32]string, error) {
 	found := make(map[uint32]string)
-	
+
 	// Read the /Applications directory
 	entries, err := os.ReadDir("/Applications")
 	if err != nil {
@@ -23,7 +23,7 @@ func findAllInstalledVersions() (map[uint32]string, error) {
 		if !entry.IsDir() {
 			continue
 		}
-		
+
 		dirName := entry.Name()
 		// Check if it's an InDesign folder
 		if strings.HasPrefix(dirName, "Adobe InDesign ") {
@@ -44,13 +44,13 @@ func findAllInstalledVersions() (map[uint32]string, error) {
 
 			// e.g., "Adobe InDesign 2024" -> "2024"
 			versionName := strings.TrimPrefix(dirName, "Adobe InDesign ")
-			
+
 			// Use our reverseVersionMap (from versions.go)
 			// to turn "2024" into 19
 			if major, ok := reverseVersionMap[versionName]; ok {
 				// Build the full path to the .app
 				appPath := fmt.Sprintf("/Applications/%s/%s.app", dirName, dirName)
-				
+
 				// Check if the .app file actually exists
 				if _, err := os.Stat(appPath); err == nil {
 					found[major] = appPath // e.g., found[19] = "/..."
