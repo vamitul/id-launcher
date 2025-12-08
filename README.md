@@ -96,19 +96,10 @@ go build
 
 - - -
 
-## Documentation manager
-
-Custom Gem
-
-Show thinking
-
-Here is the revised `README.md`. It has been rewritten to align with the **Krommatine Systems** "Wise Guide" voice—direct, authoritative, and helpful—while accurately reflecting the new macOS `.app` bundle generation logic found in your source code.
-
-- - -
 
 # InDesign Launcher
 
-A precision utility to automatically open Adobe InDesign (`.indd`) files with the correct version of the application.
+A utility to automatically open Adobe InDesign (`.indd`) files with the correct version of the application.
 
 - - -
 
